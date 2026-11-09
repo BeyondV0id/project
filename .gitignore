@@ -1,0 +1,18 @@
+pnpm-debug.log*
+
+# Cache
+.cache/
+.npm/
+
+# Coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+# Dependencies
+node_modules/
