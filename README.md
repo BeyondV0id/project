@@ -15,9 +15,20 @@
 
 ## Status
 
-**Phase 1 — Architecture and design.** No application code yet, by design.
+**Phase 1 — Architecture and design: complete.** Phase 2 — walking skeleton: started.
 
-Everything the team needs to start coding — module boundaries, database schema, API contracts, prompts, retrieval strategy, evaluation protocol and report outline — is specified in `docs/`.
+What is implemented so far (under `src/`, offline, `MOCK_MODE=1`):
+
+- **Data architecture** — Pydantic v2 schemas for `AnalysisResponse`, components, nutrients, questions, provenance (`src/core/schemas.py`).
+- **Database** — SQLite with the full DDL from `docs/04-data-model.md` (16+ tables: `food`, `food_nutrient`, `analysis`, `analysis_component`, `clarification`, `feedback`, `llm_call`, ...), WAL mode, foreign keys, plus a seed with 25 demo foods and 7 nutrients (`src/db/`).
+- **Nutrition arithmetic** — pure Python, NULL-preserving, kJ → kcal conversion, unit-tested (`src/core/nutrition.py`).
+- **Confidence + clarification** — feature fusion, hard caps, isotonic calibration hook, question ranking (`src/core/confidence.py`, `src/core/clarify.py`).
+- **LangGraph management** — typed state, 7 agent nodes (router, perception, retrieval, portion, calculator, critic, clarifier) and a runnable pipeline with a plain-Python fallback when `langgraph` is unavailable (`src/agents/`).
+- **Mock provider path** — deterministic decomposition keyed by image hash; the full pipeline runs end-to-end offline.
+
+In progress / not yet wired: ChromaDB vector store (design complete, in-memory stub in place pending `chromadb` install), FastAPI routes, Streamlit UI, live VLM provider.
+
+Everything the team needs to continue coding — module boundaries, database schema, API contracts, prompts, retrieval strategy, evaluation protocol and report outline — is specified in `docs/`.
 
 ## One-paragraph summary
 

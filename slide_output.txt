@@ -1,0 +1,83 @@
+=== SLIDE 17 ===
+  Requirements — Non-Functional
+  17
+  The system should reach component F1 ≥ 0.80, calorie error ≤ 18 % and calibration error ≤ 0.10.
+  Results should arrive within 20 seconds at no more than $0.01 per meal.
+  Every displayed nutrient must trace back to a database record.
+  Offline mock mode must give repeatable results without internet.
+  Runs on a CPU-only laptop with 8 GB RAM; photos stay stored locally.
+  A non-medical disclaimer is shown on every result.
+
+=== SLIDE 18 ===
+  Requirements — Technology Stack
+  18
+  The system is written in Python with Pydantic v2 data schemas.
+  Gemini 2.5 Flash is used as the vision-language model for perception only.
+  SQLite (WAL mode) stores records and Chroma stores vectors.
+  Retrieval uses bge-small-en-v1.5 embeddings, BM25, rank fusion and a cross-encoder reranker.
+  Isotonic regression calibrates the fused confidence signals.
+  The user interface is a Streamlit web app.
+  It runs on a standard Windows laptop, CPU-only, with 8 GB RAM.
+
+=== SLIDE 19 ===
+  Dataset
+  19
+  Our own gold_v1 set has 150 images of 60 weighed Indian meals.
+  IFCT 2017 gives 528 Indian foods with about 150 nutrients each.
+  USDA FoodData Central adds about 8,000 foods as a global fallback.
+  The Indian Thali Dataset has 7,900 multi-dish images for segmentation.
+  The Weight Dataset has 1,400 images with measured component mass.
+  Data is split 60 / 20 / 20 by meal, never by image.
+
+=== SLIDE 20 ===
+  Status of the Project
+  20
+  Phase 1 is complete: data modelling, database schema, knowledge base, API contracts and evaluation plan.
+  IFCT 2017, USDA, Indian Thali, Weight and Nutrition5k data are prepared.
+  Phase 2 is in progress: pipeline skeleton, portion geometry, confidence tuning and weighing sessions.
+
+=== SLIDE 21 ===
+  Status of the Project — Roadmap
+  21
+  Phase 1, specification and data model, is done.
+  Phase 2, the walking skeleton with offline demo, is in progress.
+  Phase 3, live model and calibration, is planned.
+  Phase 4, evaluation and the final report, is planned.
+  Critical path: kitchen weighing sessions for ground truth.
+
+=== SLIDE 22 ===
+  Conclusion
+  22
+  Calorie error is split into identity, mass, grounding and calibration, and each is solved separately.
+  The vision model never predicts numbers; all nutrients come from verified tables.
+  Calibrated confidence and selective questions make the output honest.
+  The system is built for mixed Indian platters.
+  Phase 1 is done and the pipeline skeleton is under way.
+  Future work includes 3D volume from video and more regional recipes.
+
+=== SLIDE 23 ===
+  References (1/3)
+  23
+  [1] Longvah et al. (2017). Indian Food Composition Tables. NIN, ICMR.
+  [2] USDA. FoodData Central.
+  [3] Wang et al. (2026). Comparative study of vision-language models for food nutrient estimation.
+  [4] FoodDecom (2025). Decomposing food images: a two-step framework.
+  [5] Arora et al. What is there in an Indian Thali? ICVGIP.
+
+=== SLIDE 24 ===
+  References (2/3)
+  24
+  [6] NutriVisRAG (2025). Exemplar grounding with vector databases.
+  [7] Yu et al. OmniFood8K. CVPR.
+  [8] Teng et al. (2027). Multimodal fusion for food nutrition estimation: a survey.
+  [9] Thames et al. (2021). Nutrition5k. CVPR.
+  [10] Wu et al. (2021). FoodSeg103 benchmark. ACM Multimedia.
+
+=== SLIDE 25 ===
+  References (3/3)
+  25
+  [11] Guo et al. (2017). On calibration of modern neural networks. ICML.
+  [12] Cormack et al. (2009). Reciprocal rank fusion. SIGIR.
+  [13] Reimers & Gurevych (2019). Sentence-BERT. EMNLP.
+  [14] Geifman & El-Yaniv (2017). Selective classification. NeurIPS.
+

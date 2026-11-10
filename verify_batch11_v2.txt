@@ -1,0 +1,273 @@
+=== SLIDE 2 ===
+  1.  Abstract
+2.  Introduction
+3.  Literature Survey
+4.  Challenges in Food Recognition
+5.  Our Approach: How We Solve Each Challenge
+6.  Motivation — Why This Matters
+7.  Objectives
+8.  Problem Statement
+9.  System Workflow
+10. Methodology — The Pipeline
+11. Requirements
+12. Datasets
+13. Project Status
+14. Roadmap
+15. Conclusion
+16. References
+  Serial No.
+  Contents
+
+=== SLIDE 3 ===
+  Today's calorie-tracking apps give you one number for an entire meal. For a mixed Indian plate — rice, dal, chapati, sabzi — that single number is wrong by design, because every item has a different calorie density.
+
+We are building a system that changes this. From a single meal photo, it:
+• Separates the plate into individual food items
+• Estimates how many grams of each item are on the plate
+• Looks up verified nutrition data from India's official food tables (IFCT 2017) and USDA
+• Reports calories and macros per item, plus a confidence score so you know what's reliable
+
+Key difference: the AI only identifies food — it never guesses calories. All numbers come from verified databases, calculated in plain code. When the system isn't sure, it asks you a quick question instead of guessing. Built for Indian meals first, runs on a regular laptop.
+
+=== SLIDE 4 ===
+  A mixed meal is not a single dish — but today's apps treat it like one.
+
+THE PROBLEM
+Photo logging is fast and convenient. But when you snap a thali, the app collapses 3–8 different foods into one guessed entry. A single serving-size mistake can throw off the calorie count by 50% or more.
+
+WHY IT'S HARD
+• No depth in a 2D photo — we can't see how tall the dal is
+• Foods hide under each other (chicken under rice)
+• The same food has wildly different calories depending on how it's cooked (cooked rice: 130 kcal/100g | raw rice: 345 kcal/100g)
+• Indian dishes and regional names (pappu, koora, annam) aren't in global databases
+
+WHAT WE'RE BUILDING
+A system that sees the plate the way a nutritionist would — component by component — and grounds every number in a verified food-composition table. No hallucinated calories. Honest uncertainty. Runs offline on your laptop.
+
+=== SLIDE 10 ===
+  WHAT WE AIM TO ACHIEVE
+
+1. SEE THE PLATE CLEARLY
+   Identify 3–8 food items on a mixed plate with their boundaries and    preparation state (raw, cooked, fried, gravy).
+
+2. ESTIMATE PORTIONS IN GRAMS
+   Use the plate as a scale reference to calculate how many grams of each    item are present, with a realistic uncertainty range.
+
+3. GROUND EVERY NUMBER IN VERIFIED DATA
+   Every calorie and macro value traces back to IFCT 2017 or USDA —    nothing comes from the AI's memory.
+
+4. CALCULATE HONESTLY
+   Pure Python arithmetic: nutrients per 100g × grams ÷ 100. Missing values    stay missing — never silently become zero.
+
+5. REPORT CONFIDENCE YOU CAN TRUST
+   A calibrated reliability score (not the AI's internal confidence) so you    know which items are solid and which are uncertain.
+
+6. ASK ONLY WHEN IT MATTERS
+   At most 2 targeted questions per meal, only for the items where your    answer would actually change the result.
+
+7. STAY FAST AND LIGHTWEIGHT
+   Results in under 20 seconds on a regular CPU laptop. Works offline for demos.
+
+=== SLIDE 11 ===
+  THE PROBLEM
+Calorie-tracking apps collapse a mixed meal into one dish and one guessed number. For an Indian thali (rice, dal, chapati, 2–3 curries), that single number hides large errors, can't be verified, and gives no hint of how much to trust it.
+
+WHAT WE'RE BUILDING
+A system that takes one meal photo and produces a component-level nutrition report — not a single guess.
+
+INPUT: One smartphone photo of a mixed Indian meal (3–8 items), plus optional notes like plate size or meal type. Text or voice input supported.
+
+OUTPUT: For each food item — name, estimated grams (with range), calories, protein, carbs, fat, confidence score, and the database source. Plus a meal total with an overall reliability indicator.
+
+HOW WE MEASURE SUCCESS
+• Component identification accuracy (F1 score)
+• Portion estimation error in grams
+• Calorie error vs. weighed ground truth
+• Calibration: does 80% confidence mean 80% accurate?
+• Speed: under 20 seconds on a regular laptop
+
+NON-NEGOTIABLE: This is an informational self-tracking tool — not medical, clinical, or diagnostic advice. Every result carries this disclaimer.
+
+=== SLIDE 13 ===
+  THE 9-STAGE PIPELINE: FROM PHOTO TO VERIFIED REPORT
+
+1. INPUT & CONTEXT
+   Photo uploaded; optional plate size, meal type, or diet goals noted.
+
+2. QUALITY CHECK & ROUTING
+   Blur/exposure validated; simple vs. complex plate routed to appropriate depth.
+
+3. SEE THE COMPONENTS (Perception)
+   Vision model finds each food item, draws its region, labels its state (cooked/raw/fried/gravy). CRITICAL: The model NEVER outputs calories or grams.
+
+4. LOOK UP VERIFIED NUTRITION (RAG)
+   Hybrid search matches each item to IFCT 2017 / USDA. Physical-state filter ensures cooked rice matches cooked rice (130 kcal), not raw (345 kcal).
+
+5. ESTIMATE PORTION MASS
+   Plate diameter → pixel scale → food area → heap volume × density → grams with an 80% confidence interval.
+
+6. CALCULATE NUTRITION
+   Pure Python: (nutrient per 100g × grams ÷ 100) for each item. Sum for meal total.
+
+7. SANITY CHECK (Critic)
+   Automatic veto on impossible portions or macro ratios before you see results.
+
+8. CALIBRATED CONFIDENCE
+   7 pipeline signals fused → isotonic regression → honest reliability score.
+
+9. DECIDE & CLARIFY
+   High confidence? Deliver report. Low confidence? Ask 1–2 targeted questions, recalculate only what's affected.
+
+10. PERSIST EVERYTHING
+   Full audit trail: model version, prompt version, KB version, compute version — deterministic replay guaranteed.
+  Stage
+  Primary Operation / Functionality
+  Architectural Invariant / Purpose
+  1. Input Intake
+  Accepts meal image, optional context (plate diameter, meal type, diet goals).
+  Captures user context to constrain portion estimation.
+  2. Image Preparation
+  Validates format, checks blur/lighting, assigns routing tier (T0, T1, T2).
+  Fails fast on unusable photos; matches pipeline depth to complexity.
+  3. Perception Agent
+  Detects visual components, bounding boxes, physical states, relative areas.
+  Strict rule: VLM emits labels and coordinates only; never calories or grams.
+  4. Food Analysis (RAG)
+  Dense + BM25 hybrid search over IFCT 2017 & USDA; state-filtered reranking.
+  Every number grounded in peer-reviewed composition tables (cutoff 0.55).
+  5. Portion Estimation
+  Plate scale anchor → projected area → heap volume → food density → grams.
+  Scale-anchored geometry converts 2D pixels to mass with 80% CI.
+  6. Nutrition Calculation
+  Scales per-100 g database nutrients by estimated mass; sums overall totals.
+  Pure Python arithmetic outside LLM; unit-tested; NULL values preserved.
+  7. Critic Agent
+  Evaluates physical plausibility, mass balance, and macro density sanity.
+  Catches hallucinated portions or impossible macronutrient ratios.
+  8. Confidence Fusion
+  Fuses 7 pipeline signals into a single score; calibrated via isotonic regression.
+  Provides statistically honest uncertainty instead of uncalibrated confidence.
+  9. Decision & Clarify
+  Accepts result if confidence ≥ τ; triggers targeted question if confidence < τ.
+  Resolves biggest uncertainties cheaply; max 2 questions/round, 2 rounds.
+  10. Report & Guidance
+  Generates transparent report with values, ranges, sources, and diet tips.
+  Explains validated totals without modifying underlying numbers.
+  11. Persistence
+  Stores analysis run, component IDs, provenance, and prompt/KB versions.
+  Guarantees 100 % auditability and deterministic reproducibility.
+
+=== SLIDE 14 ===
+  FOUR CORE MECHANISMS THAT MAKE IT WORK
+
+1. VISION THAT DOESN'T HALLUCINATE
+   The AI is constrained by a strict output schema: label, bounding box, physical state, relative size. ZERO numeric fields. It literally cannot output a calorie number.
+
+2. RETRIEVAL THAT KNOWS RAW FROM COOKED
+   Dense + keyword search over IFCT 2017 & USDA, fused with reciprocal rank fusion. A physical-state filter rejects mismatches — cooked rice never matches raw rice. Hard cutoff at 0.55 similarity: below that, we say 'uncertain,' not 'here's a guess.'
+
+3. PORTIONS FROM GEOMETRY, NOT GUESSES
+   Plate diameter in the photo gives us pixels-per-cm. Segmented food area × category-specific heap height × food density = grams. Log-normal confidence interval reflects real uncertainty.
+
+4. CONFIDENCE THAT'S STATISTICALLY HONEST
+   7 observable signals (identity match, retrieval score, portion plausibility, critic verdict, image quality, state certainty, visibility) → weighted fusion → isotonic calibration on held-out weighed meals. The result: when we say 80% confidence, we're right ~80% of the time.
+
+WHY STATE FILTERING MATTERS:
+Cooked white rice = 130 kcal/100g | Raw rice = 345 kcal/100g. Without the filter, a basic staple is overestimated by 2.6×. This is the single largest systematic error in the field — and we eliminate it by design.
+
+=== SLIDE 15 ===
+  WHAT THE SYSTEM MUST DO (Functional)
+
+• Break a mixed plate into 3–8 items with regions and prep states
+• Estimate grams per item using the plate as a scale reference
+• Match each item to IFCT 2017 / USDA with raw/cooked filtering
+• Calculate nutrition in pure Python — missing values stay missing
+• Sanity-check portions and macros before showing results
+• Report a calibrated confidence score you can trust
+• Ask at most 2 questions, only when your answer changes the result
+• Save full audit trail for exact reproducibility
+
+QUALITY & CONSTRAINTS (Non-Functional)
+
+• Accuracy: Component F1 ≥ 0.80 | Calorie MAPE ≤ 18% | Calibration error ≤ 0.10
+• Speed: Median ≤ 8 sec, 95th percentile ≤ 20 sec on complex plates
+• Cost: ≤ $0.01 per analysis
+• Offline-first: Full pipeline runs without internet (MOCK_MODE)
+• Zero hallucination: Every number traces to a database row
+• Runs on: Standard Windows laptop, 8 GB RAM, CPU only
+• Privacy: Photos and data stay local; user controls deletion
+• Safety: Non-medical disclaimer on every result
+
+=== SLIDE 17 ===
+  WHERE WE ARE TODAY
+
+✅ PHASE 1 COMPLETE — FOUNDATION BUILT
+All the 'plumbing' is done and tested:
+• Database design (12 tables) — stores foods, nutrients, analyses, user feedback
+• Knowledge base — IFCT 2017 (528 Indian foods), USDA (~8,000 foods), loaded and searchable
+• Vector search index — finds the right food record even with regional names
+• API contracts — exact data shapes for every request and response
+• Evaluation plan — how we'll measure success, on what data
+
+📦 DATA ASSETS READY
+• IFCT 2017 with ~800 regional aliases (Telugu, Hindi, transliterated)
+• USDA Foundation Foods as global fallback
+• Indian Thali Dataset (7,900 images) for training segmentation
+• Weight Estimation Dataset (1,400 images) for portion baselines
+• Nutrition5k (5,000 plates with depth) for geometry validation
+• Our gold_v1: 150 photos of 60 weighed Indian meals — our report card
+
+🔄 PHASE 2 IN PROGRESS — CONNECTING THE PIECES
+Building the walking skeleton: upload photo → get component nutrition report.
+Current focus: portion geometry (plate → pixels → grams), confidence calibration, and kitchen weighing sessions to expand gold_v1.
+
+📍 NEXT MILESTONE
+End-to-end run on first 20 gold_v1 meals in offline mock mode — fully reproducible.
+
+=== SLIDE 18 ===
+  OUR ROADMAP
+
+PHASE 1 — FOUNDATION          ✅ DONE
+Architecture, database schema, dual-index RAG design, API contracts, evaluation plan.
+
+PHASE 2 — WALKING SKELETON    🔄 IN PROGRESS
+Mock pipeline end-to-end; Streamlit UI; offline deterministic execution.
+Sprints 3–4: Image upload → perception → deterministic nutrition math.
+Sprints 5–6: Portion geometry (plate → area → volume → grams).
+
+PHASE 3 — LIVE AI & CALIBRATION   📋 PLANNED
+Live Gemini 2.5 Flash integration; 7-signal isotonic calibration; active clarification loop (targeted questions).
+Sprints 7–8: Calibration fitting on weighed meals; question triggers.
+
+PHASE 4 — EVALUATION & REPORT   📋 PLANNED
+Full gold_v1 benchmark; comparative baselines; final thesis documentation.
+Sprints 9–10: Evaluation, ablation studies, write-up.
+
+⚠️ CRITICAL PATH
+Kitchen weighing sessions — every evaluation number depends on ground-truth mass data.
+
+=== SLIDE 19 ===
+  WHAT MAKES THIS DIFFERENT
+
+ERROR DECOMPOSITION
+We don't just chase a lower calorie error. We break it into four independent pieces — identity, mass, grounding, calibration — and solve each with a dedicated, measurable component.
+
+GROUNDING BY CONSTRUCTION
+The AI sees food; it never predicts numbers. Every calorie comes from IFCT 2017 / USDA, aggregated in unit-tested Python. Zero hallucination path.
+
+HONESTY AS A FEATURE
+Calibrated confidence bands + targeted clarification = no silent overconfident guesses. You always know what's solid and what's uncertain.
+
+BUILT FOR INDIAN PLATES FIRST
+~800 regional aliases, state-filtered retrieval, composite-dish recipes — not an afterthought, the primary design target.
+
+WHERE WE STAND
+Phase 1 (data, architecture, contracts) complete. Walking skeleton underway.
+
+WHAT'S NEXT
+• 3D volume from video (not just single photos)
+• Wearable glucose correlation for personal calibration
+• Multi-regional recipe coverage
+
+IMMEDIATE GOAL: End-to-end offline demo on 20 weighed thali meals.
+

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    files = sorted([f for f in os.listdir(slides_dir) if f.startswith('slide') and f.endswith('.xml')], key=lambda x: int(re.search(r'd+', x).group()))
+  File "<string>", line 7, in <lambda>
+    files = sorted([f for f in os.listdir(slides_dir) if f.startswith('slide') and f.endswith('.xml')], key=lambda x: int(re.search(r'd+', x).group()))
+                                                                                                                      ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'd'
